@@ -1,15 +1,13 @@
 import numpy as np
 import cv2
+import sys
 
 class Cipher:
-    def __init__(self):
-        pass
+    def __init__(self, hsv_min_hue=0, hsv_max_hue=360):
+        self.hsv_min_hue = hsv_min_hue
+        self.hsv_max_hue = hsv_max_hue
 
-    def char2int(self, character):
-        return int(bytes(character, 'ASCII')[0])
-
-    def mapper(self, character):
-        specialMap = {
+        self.specialMap = {
             ' ': [0, 0, 0.1],
             ',': [0, 0, 0.2],
             ':': [0, 0, 0.3],
@@ -18,15 +16,20 @@ class Cipher:
             '-': [0, 0, 0.6],
         }
 
-        if character in specialMap: return specialMap[character]
+    def char2int(self, character):
+        return int(bytes(character, 'ASCII')[0])
+
+    def mapper(self, character):
+
+        if character in self.specialMap: return self.specialMap[character]
 
         min_value = self.char2int('a')
-        max_value = self.char2int('z')
+        max_value = self.char2int('z') + 1
 
         value = self.char2int(character)
 
         if value >= min_value and value <= max_value:
-            hue = (value - (min_value - 1)) / (max_value - (min_value - 1)) * 178
+            hue = (value - min_value) / (max_value - min_value) * (self.hsv_max_hue - self.hsv_min_hue) + self.hsv_min_hue
             return [hue, 1, 1]
 
         else:
@@ -53,10 +56,15 @@ class Cipher:
 
         return resized
 
-cipher = Cipher()
-encoded = cipher.encode("In the end the Party would announce that two and two made five, and you would have to believe it. It was inevitable that they should make that claim sooner or later: the logic of their position demanded it. Not merely the validity of experience, but the very existence of external reality, was tacitly denied by their philosophy. The heresy of heresies was common sense. And what was terrifying was not that they would kill you for thinking otherwise, but that they might be right. For, after all, how do we know that two and two make four? Or that the force of gravity works? Or that the past is unchangeable? If both the past and the external world exist only in the mind, and if the mind itself is controllable - what then?")
+if len(sys.argv) != 2:
+    print("Espera-se um argumento contendo a mensagem")
+    exit(1)
 
-cv2.imshow('profile', encoded)
-cv2.waitKey(0)
+cipher = Cipher()
+#encoded = cipher.encode("In the end the Party would announce that two and two made five, and you would have to believe it. It was inevitable that they should make that claim sooner or later: the logic of their position demanded it. Not merely the validity of experience, but the very existence of external reality, was tacitly denied by their philosophy. The heresy of heresies was common sense. And what was terrifying was not that they would kill you for thinking otherwise, but that they might be right. For, after all, how do we know that two and two make four? Or that the force of gravity works? Or that the past is unchangeable? If both the past and the external world exist only in the mind, and if the mind itself is controllable - what then?")
+encoded = cipher.encode(sys.argv[1])
+
+# cv2.imshow('profile', encoded)
+# cv2.waitKey(0)
 
 cv2.imwrite('profile.png', encoded * 255)
