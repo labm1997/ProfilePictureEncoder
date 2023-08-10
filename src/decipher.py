@@ -62,13 +62,16 @@ class Decipher:
 
         return ''.join(decodedArray)
 
-if len(sys.argv) != 2:
+if len(sys.argv) < 2:
     print("Espera-se um argumento contendo o número de blocos na horizontal")
     exit(1)
 
 image = cv2.imread('profile.png')
 
-decipher = Decipher()
+hsv_min_hue = int(sys.argv[2]) if len(sys.argv) >= 4 else 0
+hsv_max_hue = int(sys.argv[3]) if len(sys.argv) >= 4 else 360
+
+decipher = Decipher(hsv_min_hue=hsv_min_hue, hsv_max_hue=hsv_max_hue)
 decoded = decipher.decode(image, int(sys.argv[1]))
 
 print(decoded)
