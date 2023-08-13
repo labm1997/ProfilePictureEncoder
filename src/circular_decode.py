@@ -77,13 +77,44 @@ def get_arcs_from_circles(detected_circles):
     return np.array(arcs)
 
 
+def detect_quadrant_angle(hsv_image, arcs):
+    radius1, radius2 = arcs
+
+    thetas = np.linspace(+np.pi/18, 2*np.pi - np.pi/18, 1000)
+
+    # Detect divisions
+    divisions = [0]
+    on_division = False
+    for theta in thetas:
+        t = np.linspace(radius1, radius2)
+        x = (width // 2 + t * np.cos(theta)).astype(np.int64)
+        y = (height // 2 - t * np.sin(theta)).astype(np.int64)
+
+        holes = np.sum(hsv_image[y, x][:, 2] == 0.0) / \
+            hsv_image[y, x][:, 2].size
+
+        if not on_division and holes > 0.5:
+            on_division = True
+            divisions.append(theta)
+
+        elif on_division and holes < 0.4:
+            on_division = False
+
+    divisions = np.array(divisions)
+
+    return np.mean(divisions[1:] - divisions[0:-1])
+
+
 def get_hsv_from_arcs(hsv_image, arcs):
     radius1, radius2 = arcs
 
     radius = (radius1 + radius2) / 2.0
 
-    sample_size = 100
-    theta = np.linspace(np.pi/180, 2*np.pi - np.pi/18, sample_size)
+    quadrant_angle = detect_quadrant_angle(hsv_image, arcs)
+    total_quadrants = int(2*np.pi / quadrant_angle)
+
+    theta = np.array(
+        [2*np.pi * (q+0.5) / total_quadrants for q in range(total_quadrants)])
     x = (width // 2 + radius * np.cos(theta)).astype(np.int64)
     y = (height // 2 - radius * np.sin(theta)).astype(np.int64)
 
@@ -107,8 +138,9 @@ for arcs in detected_arcs:
                         hsv_max_hue=int(args.hsv_max_hue))
     decoded = decipher.decode(arc_hsv)
 
-    print(decoded)
+    print(decoded, end="")
 
+print("")
 # Display the image with detected circles
 cv2.imshow('Detected Arcs', image)
 cv2.waitKey(0)
